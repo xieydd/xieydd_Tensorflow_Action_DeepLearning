@@ -101,3 +101,5 @@ def get_image_path(image_lists,image_dir,label_name,index,category):
 	return full_path
 
 #这个函数通过类别名称、所属的数据集和图片编号
+#
+#
