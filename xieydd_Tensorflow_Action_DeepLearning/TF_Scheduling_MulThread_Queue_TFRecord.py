@@ -30,5 +30,21 @@ filename_queue = tf.train.string_input_producer(files,shuffle=False)
 reader = tf.TFRecoderReader()
 _,serialized_example = reader.read(filename_queue)
 features = tf.parse_single_example(serialized_example,
-	features={'i':tf.FixedLenFeature([],tf.int64,'j':tf.FixedLenFeature([],tf.int64))}) 
+	features={'i':tf.FixedLenFeature([],tf.int64,'j':tf.FixedLenFeature([],tf.int64))})
+
+with tf.Session() as sess:
+	#虽然这里没有定义变量，但是match_filenames_once需要初始化一些变量
+	tf.global_variables_initializer().run()
+	print(sess.run(fils))
+
+	coord = tf.train.Coordinator()
+	threads = tf.train.start_queue_runners(sess=sess,coord=coord)
+
+	#多次执行获取数据的操作
+	for i in range(6):
+		print(sess.run([features['i'],features['j']]))
+	coord.request_stop()
+	coord.join(threads)
+
+
 
