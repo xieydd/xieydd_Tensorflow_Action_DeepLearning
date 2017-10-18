@@ -19,14 +19,14 @@ BOTTLENECK_TENSOR_NAME = 'pool_3/_reshape:0'
 JPEG_DATA_TENSOR_NAME = 'DecodeJpeg/contents:0'
 
 #下载好的谷歌训练好的Inception-vc3模型
-MODEL_DIR = '/path/to/model'
-MODEL_FILE = 'classify_image_graph_def.pb'
+MODEL_DIR = 'G:/tensorflow/inception_dec_2015'
+MODEL_FILE = 'tensorflow_inception_graph.pb'
 
 #将原图像通过模型得到的特征向量保存在文件中
-CHAHE_DIR = 'tmp/bottleneck'
+CHAHE_DIR = 'G:/tensorflow/tmp/bottleneck'
 
 #图片数据文件夹
-INPUT_DATA = '/path/to/flower_data'
+INPUT_DATA = 'G:/tensorflow/flower_photos'
 
 #验证数据的百分比
 VALIDATION_PRECENTAGE = 10
@@ -75,7 +75,7 @@ def create_image_lists(TEST_PRECENTAGE,VALIDATION_PRECENTAGE):
 			chance = np.random.randint(100)
 			if chance < VALIDATION_PRECENTAGE:
 				validation_images.append(base_name)
-			if chance < (VALIDATION_PRECENTAGE + TEST_PRECENTAGE:)
+			if chance < (VALIDATION_PRECENTAGE + TEST_PRECENTAGE):
 				testing_images.append(base_name)
 			else:
 				training_images.append(base_name)
@@ -84,7 +84,7 @@ def create_image_lists(TEST_PRECENTAGE,VALIDATION_PRECENTAGE):
 		'dir':dir_name,
 		'training':training_images,
 		'testing':testing_images,
-		'valicdation':validation_images
+		'validation':validation_images
 		}
 	return result
 
@@ -105,7 +105,7 @@ def get_image_path(image_lists,image_dir,label_name,index,category):
 
 #这个函数通过类别名称、所属的数据集和图片编号获得经过Inception_v3模型处理得到的特征向量文件地址
 def get_bottleneck_path(image_lists,label_name,index,category):
-	return get_image_path(image_lists,CHAHE_DIR,label_name,index,category)+'text'
+	return get_image_path(image_lists,CHAHE_DIR,label_name,index,category)+'.txt'
 
 #使用加载的训练好的Inception_v3模型处理一张照片，得到这个照片的特征向量
 def run_bottleneck_on_image(sess,image_data,image_data_tensor,bottleneck_tensor):
@@ -118,32 +118,32 @@ def run_bottleneck_on_image(sess,image_data,image_data_tensor,bottleneck_tensor)
 #这个方法获取一张图片经过Inception_v3模型处理的特征向量，会先寻找已经计算保存下来的特征向量，如果找不到就创建
 def get_or_create_bottlencek(sess,image_lists,label_name,index,category,jpeg_data_tensor,bottleneck_tensor):
 	 #获取一张图片对应特征向量文件路径
-	 label_lists = image_lists[label_name]
-	 sub_dir = label_lists['dir']
-	 sub_dir_path = os.path.join(CHAHE_DIR,sub_dir)
-	 if not os.path.exists(sub_dir_path):os.makedirs(sub_dir_path)
+    label_lists = image_lists[label_name]
+    sub_dir = label_lists['dir']
+    sub_dir_path = os.path.join(CHAHE_DIR,sub_dir)
+    if not os.path.exists(sub_dir_path):os.makedirs(sub_dir_path)
 
-	 bottleneck_path = get_bottleneck_path(image_lists,label_name,index,category)
-	 #如果这个特征向量文件不存在，通过模型计算特征向量并存入文件
-	 if not os.path.exists(bottleneck_path):
-	 	#获取原始图片的路径
-	 	image_path = get_image_path(image_lists,INPUT_DATA,label_name,index,category)
-	 	#获取图片内容
-	 	image_data = gfile.FastGFile(image_path,'rb').read()
-	 	#通过模型计算得到特征
-	 	bottleneck_values = run_bottleneck_on_image(sess,image_data,jpeg_data_tensor,bottleneck_tensor)
-	 	#将计算的特征向量存入文件
-	 	bottleneck_string = ','.join(str(x) for x in bottleneck_values)
-	 	with open(bottleneck_path,'w') as bottleneck_file:
-	 		bottleneck_file.write(bottleneck_string)
+    bottleneck_path = get_bottleneck_path(image_lists,label_name,index,category)
+    #如果这个特征向量文件不存在，通过模型计算特征向量并存入文件
+    if not os.path.exists(bottleneck_path):
+    #获取原始图片的路径
+        image_path = get_image_path(image_lists,INPUT_DATA,label_name,index,category)
+        #获取图片内容
+        image_data = gfile.FastGFile(image_path,'rb').read()
+        #通过模型计算得到特征
+        bottleneck_values = run_bottleneck_on_image(sess,image_data,jpeg_data_tensor,bottleneck_tensor)
+        #将计算的特征向量存入文件
+        bottleneck_string = ','.join(str(x) for x in bottleneck_values)
+        with open(bottleneck_path,'w') as bottleneck_file:
+            bottleneck_file.write(bottleneck_string)
 
-	 else:
-	 	#直接从文件中获取图片的对应的特征向量
-	 	with open(bottleneck_path,'w') as bottleneck_file:
-	 		bottleneck_string = bottleneck_file.read()
-	 	bottleneck_values = [float(x) for x in bottleneck_string.split(',')]
-	#返回特征向量
-	return bottleneck_values
+    else:
+    #直接从文件中获取图片的对应的特征向量
+        with open(bottleneck_path,'r') as bottleneck_file:
+            bottleneck_string = bottleneck_file.read()
+        bottleneck_values = [float(x) for x in bottleneck_string.split(',')]
+        #返回特征向量
+    return bottleneck_values
 
 #函数随机获取一个batch的图片作为训练数据
 def get_random_cached_bottlenecks(sess,n_classes,image_lists,how_many,category,jpeg_data_tensor,bottleneck_tensor):
@@ -157,65 +157,83 @@ def get_random_cached_bottlenecks(sess,n_classes,image_lists,how_many,category,j
 		bottneck = get_or_create_bottlencek(sess,image_lists,label_name,image_index,category,jpeg_data_tensor,bottleneck_tensor)
 		ground_truth = np.zeros(n_classes,dtype=np.float32)
 		ground_truth[label_index] = 1.0
-		bottlenecks.append(ground_truth)
+		bottlenecks.append(bottneck)
 		ground_truths.append(ground_truth)
 	return bottlenecks,ground_truths
 
+#获得全部测试数据，最终测试的时候需要在所有测试数据上计算正确率
+def get_test_bottlenecks(sess,image_lists,n_classes,jpeg_data_tensor,bottleneck_tensor):
+	bottlenecks = []
+	ground_truths = []
+	label_name_list = list(image_lists.keys())
+
+	#枚举所有类和类别中的测试图片
+	for label_index,label_name in enumerate(label_name_list):
+		category = 'testing'
+		for index ,unused_base_name in enumerate(image_lists[label_name][category]):
+			bottleneck = get_or_create_bottlencek(sess,image_lists,label_name,index,category,jpeg_data_tensor,bottleneck_tensor)
+			ground_truth = np.zeros(n_classes,dtype=np.float32)
+			ground_truth[label_index] = 1.0
+			bottlenecks.append(bottlenecks)
+			ground_truths.append(ground_truth)
+	return bottlenecks,ground_truths 
 
 
 
 def main(_):
-	#读取所有图片
-	image_lists = create_image_lists(TEST_PRECENTAGE,VALIDATION_PRECENTAGE)
-	n_classes = len(image_lists.keys())
-	#读取已经训练好的模型，Google将其保存在GraphDef Protocol Buffer内，里面保存每一个节点取值计算方法以及变量的取值
-	with gfile.FastGFile(os.path.join(MODEL_DIR,MODEL_FILE),'rb') as f:
-		graph_def = tf.GraphDef()
-		graph_def.ParseFromString(f.read())
+    #读取所有图片
+    image_lists = create_image_lists(TEST_PRECENTAGE,VALIDATION_PRECENTAGE)
+    n_classes = len(image_lists.keys())
+    #读取已经训练好的模型，Google将其保存在GraphDef Protocol Buffer内，里面保存每一个节点取值计算方法以及变量的取值
+    with gfile.FastGFile(os.path.join(MODEL_DIR,MODEL_FILE),'rb') as f:
+        graph_def = tf.GraphDef()
+        graph_def.ParseFromString(f.read())
 
-	#加载模型，返回数据输入对应的张量以及计算瓶颈结果对应的张量
-	bottleneck_tensor,jpeg_data_tensor = tf.import_graph_def(graph_def,return_element=[BOTTLENECK_TENSOR_NAME,JPEG_DATA_TENSOR_NAME])
+    #加载模型，返回数据输入对应的张量以及计算瓶颈结果对应的张量
+    bottleneck_tensor,jpeg_data_tensor = tf.import_graph_def(graph_def,return_elements=[BOTTLENECK_TENSOR_NAME,JPEG_DATA_TENSOR_NAME])
 
-	#定义新的神经网络输入，即进过inception_v3模型后到达瓶颈层的节点取值，即特征提取
-	bottleneck_input = tf.placeholder(tf.float32,[None,BOTTLENECK_TENSOR_SIZE],name='BottleneckInputPlaceholder')
-	#定义新的标准答案输入
-	ground_truth_input = tf.placeholder(tf.float32,[None,n_classes],name='GroundTruthInput')
+    #定义新的神经网络输入，即进过inception_v3模型后到达瓶颈层的节点取值，即特征提取
+    bottleneck_input = tf.placeholder(tf.float32,[None,BOTTLENECK_TENSOR_SIZE],name='BottleneckInputPlaceholder')
+    #定义新的标准答案输入
+    ground_truth_input = tf.placeholder(tf.float32,[None,n_classes],name='GroundTruthInput')
 
-	#定义全连接层解决图片分类问题
-	with tf.name_scope('final_training_ops'):
-		weights = tf.Variable(tf.truncated_normal(BOTTLENECK_TENSOR_SIZE,n_classes),stddev=0.001)
-		biases = tf.Variable(tf.zeros([n_classes]))
-		logits = tf.matmul(bottleneck_input,weights) + biases
-		final_tensor = tf.nn.softmax(logits)
+    #定义全连接层解决图片分类问题
+    with tf.name_scope('final_training_ops'):
+        weights = tf.Variable(tf.truncated_normal([BOTTLENECK_TENSOR_SIZE,n_classes],stddev=0.001))
+        biases = tf.Variable(tf.zeros([n_classes]))
+        logits = tf.matmul(bottleneck_input,weights) + biases
+        final_tensor = tf.nn.softmax(logits)
 
-	#定义交叉熵损失函数
-	cross_entrypy = tf.nn.sparse_softmax_cross_entropy_with_logits(logits,ground_truth_input)
-	cross_entrypy_mean = tf.reduce_mean(cross_entrypy)
-	train_step = tf.train.GradientDescentOptimizer(LEARNING_RATE).minimize(cross_entrypy_mean)
+    #定义交叉熵损失函数
+    cross_entrypy = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=logits,labels=tf.argmax(ground_truth_input,1))
+    cross_entrypy_mean = tf.reduce_mean(cross_entrypy)
+    train_step = tf.train.GradientDescentOptimizer(LEARNING_RATE).minimize(cross_entrypy_mean)
 
-	#计算正确率
-	with tf.name_scope('evaluation'):
-		correct_prediction = tf.equal(tf.argmax(final_tensor,1),tf.argmax(ground_truth_input,1))
-		evaluation_step = tf.reduce_mean(tf.cast(correct_prediction,tf.float32))
+    #计算正确率
+    with tf.name_scope('evaluation'):
+        correct_prediction = tf.equal(tf.argmax(final_tensor,1),tf.argmax(ground_truth_input,1))
+        evaluation_step = tf.reduce_mean(tf.cast(correct_prediction,tf.float32))
+    config = tf.ConfigProto()
+    config.gpu_options.allow_growth=True
+    gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=0.85)
+    with tf.Session(config=config) as sess:
+        tf.global_variables_initializer().run()
 
-	with tf.Session() as sess:
-		tf.global_variables_initializer().run()
+        for i in range(STEPS):
+            #每一次获得一个batch的训练数据
+            train_bottlenecks,train_ground_truth = get_random_cached_bottlenecks(sess,n_classes,image_lists,BATCH,'training',jpeg_data_tensor,bottleneck_tensor)
+            sess.run(train_step,feed_dict={bottleneck_input:train_bottlenecks,ground_truth_input:train_ground_truth})
 
-		for i in range(STEPS):
-			#每一次获得一个batch的训练数据
-			train_bottlenecks,train_ground_truth = get_random_cached_bottlenecks(sess,n_classes,image_lists,BATCH,'training',jpeg_data_tensor,bottleneck_tensor)
-			sess.run(train_step,feed_dict={bottleneck_input:train_bottlenecks,ground_truth_input:train_ground_truth})
+            #在验证数据上测试正确率
+            if i%100 == 0 or i+1 ==STEPS:
+                validation_bottlenecks,valicdation_ground_truth = get_random_cached_bottlenecks(sess,n_classes,image_lists,BATCH,"validation",jpeg_data_tensor,bottleneck_tensor)
+                validation_accuracy = sess.run(evaluation_step,feed_dict={bottleneck_input:validation_bottlenecks,ground_truth_input:valicdation_ground_truth})
+                print('Step %d:Validation accuracy on random sample %d examples = %.1f%%' % (i,BATCH,validation_accuracy))
 
-			#在验证数据上测试正确率
-			if i%100 == 0 or i+1 ==STEPS:
-				validation_bottlenecks,valicdation_ground_truth = get_random_cached_bottlenecks(sess,n_classes,image_lists,BATCH,"validation",jpeg_data_tensor,bottleneck_tensor)
-				validation_accuracy = sess.run(evaluation_step,feed_dict={final_tensor:validation_bottlenecks,ground_truth_input:valicdation_ground_truth})
-				print('Step %d:Validation accuracy on random sample %d examples = %.1f%%' % (i,BATCH,validation_accuracy))
+            #在测试集上测试正确率
+            test_bottlenecks,test_ground_truth = get_test_bottlenecks(sess,image_lists,n_classes,jpeg_data_tensor,bottleneck_tensor)
+            test_accuracy = sess.run(evaluation_step,feed_dict={bottleneck_input:test_bottlenecks,ground_truth_input:test_ground_truth})
+            print('Step %d:Test accuracy on random sample %d examples = %.1f%%' % (i,BATCH,test_accuracy))
 
-			#在测试集上测试正确率
-			test_bottlenecks,test_ground_truth = get_random_cached_bottlenecks(sess,n_classes,image_lists,BATCH,'test',jpeg_data_tensor,bottleneck_tensor)
-			test_accuracy = sess.run(evaluation_step,feed_dict={final_tensor:test_bottlenecks,ground_truth_input:test_ground_truth})
-			prnt('Step %d:Test accuracy on random sample %d examples = %.1f%%' % (i,BATCH,test_accuracy))
-
-if __name__ == 'main':
-	tf.app.run()
+if __name__ == '__main__':
+    tf.app.run()
