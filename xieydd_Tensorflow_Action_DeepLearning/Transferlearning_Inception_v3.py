@@ -36,7 +36,7 @@ TEST_PRECENTAGE = 10
 #定义神经网络设置
 LEARNING_RATE = 0.01
 STEPS = 4000
-BATCH = 64
+BATCH = 100
 
 #读取文件夹内的图片，按训练、验证、测试数据分开
 def create_image_lists(TEST_PRECENTAGE,VALIDATION_PRECENTAGE):
@@ -121,7 +121,7 @@ def get_or_create_bottlencek(sess,image_lists,label_name,index,category,jpeg_dat
     label_lists = image_lists[label_name]
     sub_dir = label_lists['dir']
     sub_dir_path = os.path.join(CHAHE_DIR,sub_dir)
-    if not os.path.exists(sub_dir_path):os.makedirs(sub_dir_path)
+    if not os.path.exists(sub_dir_path) : os.makedirs(sub_dir_path)
 
     bottleneck_path = get_bottleneck_path(image_lists,label_name,index,category)
     #如果这个特征向量文件不存在，通过模型计算特征向量并存入文件
@@ -228,12 +228,12 @@ def main(_):
             if i%100 == 0 or i+1 ==STEPS:
                 validation_bottlenecks,valicdation_ground_truth = get_random_cached_bottlenecks(sess,n_classes,image_lists,BATCH,"validation",jpeg_data_tensor,bottleneck_tensor)
                 validation_accuracy = sess.run(evaluation_step,feed_dict={bottleneck_input:validation_bottlenecks,ground_truth_input:valicdation_ground_truth})
-                print('Step %d:Validation accuracy on random sample %d examples = %.1f%%' % (i,BATCH,validation_accuracy))
+                print('Step %d:Validation accuracy on random sample %d examples = %.1f%%' % (i,BATCH,validation_accuracy*100))
 
-            #在测试集上测试正确率
-            test_bottlenecks,test_ground_truth = get_test_bottlenecks(sess,image_lists,n_classes,jpeg_data_tensor,bottleneck_tensor)
-            test_accuracy = sess.run(evaluation_step,feed_dict={bottleneck_input:test_bottlenecks,ground_truth_input:test_ground_truth})
-            print('Step %d:Test accuracy on random sample %d examples = %.1f%%' % (i,BATCH,test_accuracy))
+        #在测试集上测试正确率
+        test_bottlenecks,test_ground_truth = get_test_bottlenecks(sess,image_lists,n_classes,jpeg_data_tensor,bottleneck_tensor)
+        test_accuracy = sess.run(evaluation_step,feed_dict={bottleneck_input:test_bottlenecks,ground_truth_input:test_ground_truth})
+        print('Final test accuracy  = %.1f%%' % (test_accuracy*100))
 
 if __name__ == '__main__':
     tf.app.run()
