@@ -4,7 +4,7 @@
 #@date 2017-10-17 上午11:09:50
 
 #加载原始图片
-import matplotile.pyplot as plt 
+import matplotlib.pyplot as plt 
 import tensorflow as tf 
 
 #读取原始数据
@@ -20,8 +20,8 @@ with tf.Session() as sess:
 	2 双三次插值法
 	3 面积插值法
 	'''
-	#这里是进行压缩
-	resized = tf.image.resize_images(img_data,300,300,method=0)
+	#这里是进行压缩 实验发现只有1行2出错，3和4都是噪声
+	resized = tf.image.resize_images(img_data,[300,300],method=1)
 	#这里没指定深度会显示一个?
 	print(resized.shape)
 
@@ -37,7 +37,7 @@ with tf.Session() as sess:
 	
 	#图像翻转
 	flipped = tf.image.flip_up_down(img_data)#上下
-	fliped = tf.image.filp_left_right(img_data)#左右翻转
+	fliped = tf.image.flip_left_right(img_data)#左右翻转
 	transposed = tf.image.transpose_image(img_data)#对角线翻转
 
 	#随机翻转
@@ -46,7 +46,7 @@ with tf.Session() as sess:
 
 	#图像色彩调整
 	#图像亮度-0.5
-	adjusted = tf.image.adjuste_brightness(img_data,-0.5)
+	adjusted = tf.image.adjust_brightness(img_data,-0.5)
 	#在[-max_delta,max_delta]范围内随机调整图像亮度
 	adjusted = tf.image.random_brightness(img_data,max_delta)
 
@@ -61,7 +61,7 @@ with tf.Session() as sess:
 	adjusted = tf.image.adjust_hue(img_data,0.3)
 	adjusted = tf.image.adjust_hue(img_data,0.6)
 	adjusted = tf.image.adjust_hue(img_data,0.9)
-	#随机调整 [0.max_delta]
+	#随机调整 [0.max_delta] 
 	adjusted = tf.image.random_hue(img_data,max_delta)
 
 	#调整饱和度
@@ -69,8 +69,8 @@ with tf.Session() as sess:
 	adjusted = tf.image.adjust_saturation(img_data,5)
 	adjusted = tf.image.random_saturation(img_data,lower,upper)
 
-	#将亮度的均值变为0方差为1
-	adjusted = tf.image.per_image_whitening(img_data)
+	#将亮度的均值变为0方差为1 这个好像失效了
+	#adjusted = tf.image.per_image_whitening(img_data)
 
 
 	#处理标注框
