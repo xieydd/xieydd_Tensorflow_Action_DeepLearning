@@ -1,5 +1,5 @@
 # -*- coding:utf-8 -*-
-#@Description: Tensorflow对于线程的调度 多线程操作一个队列
+#@Description: Tensorflow对于线程的调度 多线程操作一个队列数字
 #@author xieydd xieydd@gmail.com  
 #@date 2017-10-17 下午16:05:20
 import tensorflow as tf
@@ -40,3 +40,21 @@ enqueue_op = queue.enqueue([tf.random_normal([1])])
 
 #QueueRunner创建多个线程运行队列的入队操作 这里表示5个enqueue_op操作
 qr = tf.train.QueueRunner(queue,[enqueue_op]*5)
+#将定义过的QueueRunner加入Tensorflow计算图指定的集合中，这里没有指定加入默认的tf.GraphKeys.QUEUES_RUNNERS
+tf.train.add_queue_runner(qr)
+
+#定义出队列操作
+out_queue = queue.dequeue()
+
+with tf.Session as sess:
+	coord = tf.Coordinator()
+	'''
+	使用tf.train.QueueRunner需要明确的调用tf.train.start_queue_runners启动所有线程，如果没有
+	线程进行入队操作，当调用出队操作的时候程序会一直等待，tf.train.start_queue_runners会默认启动
+	tf.GraphKeys.QUEUES_RUNNERS集合中国所有的QueueRunner 所以这两个需要制定一个集合或者都是默认
+	'''
+	threads = tf.train.start_queue_runners(sess=sess,coord=coord)
+	for _ in range(3) :
+		print(sess.run(out_queue)[0])
+	coord.request_stop()
+	coord.join(threads)
